@@ -421,6 +421,17 @@ class Canvas(QWidget):
             self.boundedShiftShape(shape)
             return shape
 
+    def addShape(self):
+        shape = Shape('asdf')
+        print('shape', shape)
+        shape.points = [QPointF(100, 100), QPointF(300, 300)]
+        # self.deSelectShape()
+        self.shapes.append(shape)
+        shape.selected = True
+        self.selectedShape = shape
+        self.boundedShiftShape(shape)
+        return shape
+
     def boundedShiftShape(self, shape):
         # Try to move in one direction, and if it fails in another.
         # Give up if both fail.

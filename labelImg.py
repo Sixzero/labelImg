@@ -217,6 +217,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         verify = action(getStr('verifyImg'), self.verifyImg,
                         'space', 'verify', getStr('verifyImgDetail'))
+        auto_annotate = action("Auto annotate", self.autoAnnotatePicture,
+                        'm', 'verify', getStr('verifyImgDetail'))
 
         save = action(getStr('save'), self.saveFile,
                       'Ctrl+S', 'save', getStr('saveDetail'), enabled=False)
@@ -389,7 +391,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, save_format, None, create, copy, delete, None,
+            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, auto_annotate, save, save_format, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -811,6 +813,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def copySelectedShape(self):
         self.addLabel(self.canvas.copySelectedShape())
+        # fix copy and delete
+        self.shapeSelectionChanged(True)
+
+    def autoAnnotatePicture(self):
+
+        self.addLabel(self.canvas.addShape())
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
