@@ -421,10 +421,11 @@ class Canvas(QWidget):
             self.boundedShiftShape(shape)
             return shape
 
-    def addShape(self):
+    def addBox(self):
         shape = Shape('asdf')
         print('shape', shape)
-        shape.points = [QPointF(100, 100), QPointF(300, 300)]
+        shape.points = [QPointF(100, 300), QPointF(300, 300), QPointF(300, 100), QPointF(100, 100), ]
+        shape.close()
         # self.deSelectShape()
         self.shapes.append(shape)
         shape.selected = True

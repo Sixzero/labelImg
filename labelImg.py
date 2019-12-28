@@ -477,6 +477,8 @@ class MainWindow(QMainWindow, WindowMixin):
         # Open Dir if deafult file
         if self.filePath and os.path.isdir(self.filePath):
             self.openDirDialog(dirpath=self.filePath, silent=True)
+        if self.lastOpenDir and 0<len(self.lastOpenDir):
+            self.importDirImages(self.lastOpenDir)
 
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
@@ -818,7 +820,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def autoAnnotatePicture(self):
 
-        self.addLabel(self.canvas.addShape())
+        self.addLabel(self.canvas.addBox())
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
