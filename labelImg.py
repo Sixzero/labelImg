@@ -69,7 +69,7 @@ class WindowMixin(object):
 class MainWindow(QMainWindow, WindowMixin):
     FIT_WINDOW, FIT_WIDTH, MANUAL_ZOOM = list(range(3))
 
-    def __init__(self, defaultFilename=None, defaultPrefdefClassFile=None, defaultSaveDir=None):
+    def __init__(self, defaultFilename=None, defaultPrefdefClassFile=None, defaultSaveDir=None, kwargs=None):
         super(MainWindow, self).__init__()
         self.setWindowTitle(__appname__)
 
@@ -92,7 +92,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirname = None
         self.labelHist = []
         self.lastOpenDir = None
-
+        self.kwargs = kwargs or {}
         # Whether we need to save or not.
         self.dirty = False
 
@@ -102,6 +102,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.screencast = "https://youtu.be/p0nR2YsCY_U"
 
         # Load predefined classes to the list
+        self.defaultPrefdefClassFile = defaultPrefdefClassFile
         self.loadPredefinedClasses(defaultPrefdefClassFile)
 
         # Main widgets and related state.
@@ -821,6 +822,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def autoAnnotatePicture(self):
 
         self.addLabel(self.canvas.addBox())
+        if 'run_yolo' in self.kwargs:
+            print('self.image', self.image)
+            res = self.kwargs['run_yolo'](self.image)
+            print('res', res)
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
@@ -879,6 +884,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
             if text not in self.labelHist:
                 self.labelHist.append(text)
+                self.savePredefinedClasses()
+
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
@@ -1045,6 +1052,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.loadPascalXMLByFilename(xmlPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
+
             else:
                 xmlPath = os.path.splitext(filePath)[0] + XML_EXT
                 txtPath = os.path.splitext(filePath)[0] + TXT_EXT
@@ -1052,6 +1060,7 @@ class MainWindow(QMainWindow, WindowMixin):
                     self.loadPascalXMLByFilename(xmlPath)
                 elif os.path.isfile(txtPath):
                     self.loadYOLOTXTByFilename(txtPath)
+
 
             self.setWindowTitle(__appname__ + ' ' + filePath)
 
@@ -1418,6 +1427,12 @@ class MainWindow(QMainWindow, WindowMixin):
                         self.labelHist = [line]
                     else:
                         self.labelHist.append(line)
+    def savePredefinedClasses(self):
+        predefClassesFile = self.defaultPrefdefClassFile
+        if os.path.exists(predefClassesFile) is True:
+            with codecs.open(predefClassesFile, 'w', 'utf8') as f:
+                for line in self.labelHist:
+                    f.writelines(line+'\n')
 
     def loadPascalXMLByFilename(self, xmlPath):
         if self.filePath is None:
@@ -1464,7 +1479,7 @@ def read(filename, default=None):
         return default
 
 
-def get_main_app(argv=[]):
+def get_main_app(argv=[], **kwargs):
     """
     Standard boilerplate Qt application code.
     Do everything but app.exec_() -- so that we can test the application in one thread
@@ -1478,7 +1493,8 @@ def get_main_app(argv=[]):
                      argv[2] if len(argv) >= 3 else os.path.join(
                          os.path.dirname(sys.argv[0]),
                          'data', 'predefined_classes.txt'),
-                     argv[3] if len(argv) >= 4 else None)
+                     argv[3] if len(argv) >= 4 else None,
+                     kwargs)
     win.show()
     return app, win
 
