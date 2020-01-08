@@ -77,10 +77,12 @@ class PascalVocWriter:
         segmented.text = '0'
         return top
 
-    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult):
+    def addBndBox(self, xmin, ymin, xmax, ymax, name, difficult, amount=None):
         bndbox = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
         bndbox['name'] = name
         bndbox['difficult'] = difficult
+        if amount:
+            bndbox['amount'] = amount
         self.boxlist.append(bndbox)
 
     def appendObjects(self, top):
@@ -108,6 +110,9 @@ class PascalVocWriter:
             xmax.text = str(each_object['xmax'])
             ymax = SubElement(bndbox, 'ymax')
             ymax.text = str(each_object['ymax'])
+
+            amount = SubElement(object_item, 'amount')
+            amount.text = str( each_object['amount'])
 
     def save(self, targetFile=None):
         root = self.genXML()
@@ -140,13 +145,13 @@ class PascalVocReader:
     def getShapes(self):
         return self.shapes
 
-    def addShape(self, label, bndbox, difficult):
+    def addShape(self, label, bndbox, difficult, amount=None):
         xmin = int(float(bndbox.find('xmin').text))
         ymin = int(float(bndbox.find('ymin').text))
         xmax = int(float(bndbox.find('xmax').text))
         ymax = int(float(bndbox.find('ymax').text))
         points = [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax)]
-        self.shapes.append((label, points, None, None, difficult))
+        self.shapes.append((label, points, None, None, difficult, amount))
 
     def parseXML(self):
         assert self.filepath.endswith(XML_EXT), "Unsupport file format"
@@ -159,13 +164,16 @@ class PascalVocReader:
                 self.verified = True
         except KeyError:
             self.verified = False
-
-        for object_iter in xmltree.findall('object'):
+        objects = list(xmltree.findall('object'))
+        for object_iter in objects:
             bndbox = object_iter.find("bndbox")
             label = object_iter.find('name').text
+            amount = object_iter.find('amount')
+            if amount is not None:
+                amount = amount.text
             # Add chris
             difficult = False
             if object_iter.find('difficult') is not None:
                 difficult = bool(int(object_iter.find('difficult').text))
-            self.addShape(label, bndbox, difficult)
+            self.addShape(label, bndbox, difficult, amount)
         return True

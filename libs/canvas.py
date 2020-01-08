@@ -421,9 +421,9 @@ class Canvas(QWidget):
             self.boundedShiftShape(shape)
             return shape
 
-    def addBox(self):
-        shape = Shape('asdf')
-        shape.points = [QPointF(100, 300), QPointF(300, 300), QPointF(300, 100), QPointF(100, 100), ]
+    def addBox(self, x1y1, x2y2, name):
+        shape = Shape(name)
+        shape.points = [QPointF(x1y1[0], x2y2[1]), QPointF(*x2y2), QPointF(x2y2[0], x1y1[1], ), QPointF(*x1y1), ]
         shape.close()
         # self.deSelectShape()
         self.shapes.append(shape)
@@ -668,7 +668,7 @@ class Canvas(QWidget):
         points = [p1+p2 for p1, p2 in zip(self.selectedShape.points, [step]*4)]
         return True in map(self.outOfPixmap, points)
 
-    def setLastLabel(self, text, line_color  = None, fill_color = None):
+    def setLastLabel(self, text, line_color  = None, fill_color = None, amount = None):
         assert text
         self.shapes[-1].label = text
         if line_color:
@@ -676,6 +676,9 @@ class Canvas(QWidget):
 
         if fill_color:
             self.shapes[-1].fill_color = fill_color
+
+        if amount:
+            self.shapes[-1].props['amount'] = amount
 
         return self.shapes[-1]
 

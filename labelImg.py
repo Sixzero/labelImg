@@ -670,9 +670,15 @@ class MainWindow(QMainWindow, WindowMixin):
         item = self.currentItem()
         if not item:
             return
-        text = self.labelDialog.popUp(item.text())
+
+        shape = self.itemsToShapes[item]
+        text, props = self.labelDialog.popUp(shape.label, amount=shape.props.get('amount', ''))
         if text is not None:
-            item.setText(text)
+            amount = ''
+            if 'amount' in props:
+                amount = ' ' + props['amount']
+                shape.props['amount'] = props['amount']
+            item.setText(text + amount)
             item.setBackground(generateColorByText(text))
             self.setDirty()
 
@@ -729,10 +735,15 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def addLabel(self, shape):
         shape.paintLabel = self.displayLabelOption.isChecked()
-        item = HashableQListWidgetItem(shape.label)
+        amount = ' '+shape.props['amount'] if 'amount' in shape.props else ''
+
+        item = HashableQListWidgetItem(shape.label + amount)
+
+
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
         item.setBackground(generateColorByText(shape.label))
+
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
         self.labelList.addItem(item)
@@ -750,7 +761,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def loadLabels(self, shapes):
         s = []
-        for label, points, line_color, fill_color, difficult in shapes:
+        for label, points, line_color, fill_color, difficult, amount in shapes:
             shape = Shape(label=label)
             for x, y in points:
 
@@ -761,6 +772,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
                 shape.addPoint(QPointF(x, y))
             shape.difficult = difficult
+            if amount:
+                shape.props['amount'] = amount
             shape.close()
             s.append(shape)
 
@@ -790,7 +803,8 @@ class MainWindow(QMainWindow, WindowMixin):
                         fill_color=s.fill_color.getRgb(),
                         points=[(p.x(), p.y()) for p in s.points],
                        # add chris
-                        difficult = s.difficult)
+                        difficult = s.difficult,
+                        props = s.props)
 
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
         # Can add differrent annotation formats here
@@ -821,11 +835,12 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def autoAnnotatePicture(self):
 
-        self.addLabel(self.canvas.addBox())
         if 'run_yolo' in self.kwargs:
-            print('self.image', self.image)
-            res = self.kwargs['run_yolo'](self.image)
+            print('self.image', self.filePath)
+            res = self.kwargs['run_yolo'](self.filePath)
             print('res', res)
+            for recognized in res:
+                self.addLabel(self.canvas.addBox(*recognized))
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
@@ -854,6 +869,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         position MUST be in global coordinates.
         """
+        props = {}
         if not self.useDefaultLabelCheckbox.isChecked() or not self.defaultLabelTextLine.text():
             if len(self.labelHist) > 0:
                 self.labelDialog = LabelDialog(
@@ -863,7 +879,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if self.singleClassMode.isChecked() and self.lastLabel:
                 text = self.lastLabel
             else:
-                text = self.labelDialog.popUp(text=self.prevLabelText)
+                text, props = self.labelDialog.popUp(text=self.prevLabelText)
                 self.lastLabel = text
         else:
             text = self.defaultLabelTextLine.text()
@@ -873,7 +889,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if text is not None:
             self.prevLabelText = text
             generate_color = generateColorByText(text)
-            shape = self.canvas.setLastLabel(text, generate_color, generate_color)
+            shape = self.canvas.setLastLabel(text, generate_color, generate_color, amount=props.get('amount', None))
             self.addLabel(shape)
             if self.beginner():  # Switch to edit mode.
                 self.canvas.setEditing(True)
@@ -1217,6 +1233,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.fileListWidget.clear()
         self.mImgList = self.scanAllImages(dirpath)
         self.openNextImg()
+        self.mImgList = sorted(self.mImgList)
         for imgPath in self.mImgList:
             item = QListWidgetItem(imgPath)
             self.fileListWidget.addItem(item)
@@ -1423,16 +1440,20 @@ class MainWindow(QMainWindow, WindowMixin):
             with codecs.open(predefClassesFile, 'r', 'utf8') as f:
                 for line in f:
                     line = line.strip()
+                    if line in self.labelHist:
+                        print('Dublicated label', line)
+                        continue
                     if self.labelHist is None:
                         self.labelHist = [line]
                     else:
                         self.labelHist.append(line)
+
     def savePredefinedClasses(self):
+        print('savePredefinedClasses', )
         predefClassesFile = self.defaultPrefdefClassFile
-        if os.path.exists(predefClassesFile) is True:
-            with codecs.open(predefClassesFile, 'w', 'utf8') as f:
-                for line in self.labelHist:
-                    f.writelines(line+'\n')
+        with codecs.open(predefClassesFile, 'w', 'utf8') as f:
+            for line in sorted(self.labelHist):
+                f.writelines(line+'\n')
 
     def loadPascalXMLByFilename(self, xmlPath):
         if self.filePath is None:

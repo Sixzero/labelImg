@@ -29,6 +29,10 @@ class LabelDialog(QDialog):
 
         layout = QVBoxLayout()
         layout.addWidget(self.edit)
+
+        self.editAmount = QLineEdit()
+        layout.addWidget(self.editAmount)
+
         self.buttonBox = bb = BB(BB.Ok | BB.Cancel, Qt.Horizontal, self)
         bb.button(BB.Ok).setIcon(newIcon('done'))
         bb.button(BB.Cancel).setIcon(newIcon('undo'))
@@ -62,13 +66,21 @@ class LabelDialog(QDialog):
             # PyQt5: AttributeError: 'str' object has no attribute 'trimmed'
             self.edit.setText(self.edit.text())
 
-    def popUp(self, text='', move=True):
+    def postProcessAmount(self):
+        try:
+            self.props['amount'] = self.editAmount.text().trimmed()
+        except AttributeError:
+            # PyQt5: AttributeError: 'str' object has no attribute 'trimmed'
+            self.props['amount'] = self.editAmount.text()
+
+    def popUp(self, text='', move=True, amount=''):
         self.edit.setText(text)
+        self.editAmount.setText(amount)
         self.edit.setSelection(0, len(text))
         self.edit.setFocus(Qt.PopupFocusReason)
         if move:
             self.move(QCursor.pos())
-        return self.edit.text() if self.exec_() else None
+        return (self.edit.text(), {'amount': self.editAmount.text()}) if self.exec_() else (None, None)
 
     def listItemClick(self, tQListWidgetItem):
         try:

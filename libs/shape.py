@@ -38,11 +38,12 @@ class Shape(object):
     point_size = 8
     scale = 1.0
 
-    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=False):
+    def __init__(self, label=None, line_color=None, difficult=False, paintLabel=False, props=None):
         self.label = label
         self.points = []
         self.fill = False
         self.selected = False
+        self.props = props or {}
         self.difficult = difficult
         self.paintLabel = paintLabel
 
@@ -193,6 +194,7 @@ class Shape(object):
         if self.fill_color != Shape.fill_color:
             shape.fill_color = self.fill_color
         shape.difficult = self.difficult
+        shape.props = self.props.copy()
         return shape
 
     def __len__(self):
