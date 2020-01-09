@@ -42,7 +42,7 @@ class CustomQCompleter(QCompleter):
     def splitPath(self, path):
         self.local_completion_prefix = str(path)
         self.updateModel()
-        return ""
+        return [""]
 
 class LabelDialog(QDialog):
 
