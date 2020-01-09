@@ -111,8 +111,9 @@ class PascalVocWriter:
             ymax = SubElement(bndbox, 'ymax')
             ymax.text = str(each_object['ymax'])
 
-            amount = SubElement(object_item, 'amount')
-            amount.text = str( each_object['amount'])
+            if 'amount' in each_object:
+                amount = SubElement(object_item, 'amount')
+                amount.text = str( each_object['amount'])
 
     def save(self, targetFile=None):
         root = self.genXML()

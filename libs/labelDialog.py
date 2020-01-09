@@ -10,6 +10,39 @@ from libs.utils import newIcon, labelValidator
 
 BB = QDialogButtonBox
 
+class CustomQCompleter(QCompleter):
+    def __init__(self, parent=None):
+        super(CustomQCompleter, self).__init__(parent)
+        self.local_completion_prefix = ""
+        self.source_model = None
+
+    def setModel(self, model):
+        self.source_model = model
+        super(CustomQCompleter, self).setModel(self.source_model)
+
+    def updateModel(self):
+        local_completion_prefix = self.local_completion_prefix
+        class InnerProxyModel(QSortFilterProxyModel):
+            def filterAcceptsRow(self, sourceRow, sourceParent):
+                index0 = self.sourceModel().index(sourceRow, 0, sourceParent)
+                searchStr = local_completion_prefix.lower()
+                modelStr = self.sourceModel().data(index0,Qt.DisplayRole).lower()
+                # print(searchStr,' in ',modelStr, searchStr in modelStr)
+                return searchStr in modelStr
+
+
+        proxy_model = InnerProxyModel()
+
+        proxy_model.setSourceModel(self.source_model)
+
+        super(CustomQCompleter, self).setModel(proxy_model)
+        print('match :', proxy_model.rowCount())
+
+
+    def splitPath(self, path):
+        self.local_completion_prefix = str(path)
+        self.updateModel()
+        return ""
 
 class LabelDialog(QDialog):
 
@@ -23,8 +56,11 @@ class LabelDialog(QDialog):
 
         model = QStringListModel()
         model.setStringList(listItem)
-        completer = QCompleter()
+        completer = CustomQCompleter()
         completer.setModel(model)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+
         self.edit.setCompleter(completer)
 
         layout = QVBoxLayout()
