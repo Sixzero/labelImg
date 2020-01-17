@@ -856,8 +856,16 @@ class MainWindow(QMainWindow, WindowMixin):
     def labelItemChanged(self, item):
         shape = self.itemsToShapes[item]
         label = item.text()
-        if label != shape.label:
-            shape.label = item.text()
+
+        def is_float(value):
+            try:
+                float(value)
+                return True
+            except ValueError:
+                return False
+        is_float_end = is_float(label.split(' ')[-1])
+        if shape.label != label[:len(shape.label)]:
+            shape.label = ' '.join(label.split(' ')[:-1]) if is_float_end else label
             shape.line_color = generateColorByText(shape.label)
             self.setDirty()
         else:  # User probably changed item visibility
