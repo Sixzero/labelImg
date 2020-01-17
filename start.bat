@@ -1,0 +1,1 @@
+python labelimg.py  "C:\Users\Agi\Google Drive\FoodTrend\Database_FoodTrend_Data\1007" ../annotation/class_names.txt
