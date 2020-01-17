@@ -54,6 +54,8 @@ class LabelFile(object):
             bndbox = LabelFile.convertPoints2BndBox(points)
             writer.addBndBox(bndbox[0], bndbox[1], bndbox[2], bndbox[3], label, difficult, amount)
 
+        if not os.path.exists(os.path.dirname(filename)):
+            os.mkdir(os.path.dirname(filename))
         writer.save(targetFile=filename)
         return
 

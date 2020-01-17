@@ -84,6 +84,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Save as Pascal voc xml
         self.defaultSaveDir = defaultSaveDir
+        self.localDir = ''
         self.usingPascalVocFormat = True
         self.usingYoloFormat = False
 
@@ -1063,11 +1064,11 @@ class MainWindow(QMainWindow, WindowMixin):
 
             # Label xml file and show bound box according to its filename
             # if self.usingPascalVocFormat is True:
-            if self.defaultSaveDir is not None:
+            if self.getDefaultSaveDir is not None:
                 basename = os.path.basename(
                     os.path.splitext(self.filePath)[0])
-                xmlPath = os.path.join(self.defaultSaveDir, basename + XML_EXT)
-                txtPath = os.path.join(self.defaultSaveDir, basename + TXT_EXT)
+                xmlPath = os.path.join(self.getDefaultSaveDir, basename + XML_EXT)
+                txtPath = os.path.join(self.getDefaultSaveDir, basename + TXT_EXT)
 
                 """Annotation file priority:
                 PascalXML > YOLO
@@ -1231,9 +1232,15 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.importDirImages(targetDirPath)
 
+    @property
+    def getDefaultSaveDir(self):
+        return os.path.join(self.defaultSaveDir, self.localDir) if self.localDir else self.defaultSaveDir
+
     def importDirImages(self, dirpath):
         if not self.mayContinue() or not dirpath:
             return
+
+        self.localDir = os.path.split(dirpath)[-1]
 
         self.lastOpenDir = dirpath
         self.dirname = dirpath
@@ -1267,7 +1274,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def openPrevImg(self, _value=False):
         # Proceding prev image without dialog if having any label
         if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
+            if self.getDefaultSaveDir is not None:
                 if self.dirty is True:
                     self.saveFile()
             else:
@@ -1292,7 +1299,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def openNextImg(self, _value=False):
         # Proceding prev image without dialog if having any label
         if self.autoSaving.isChecked():
-            if self.defaultSaveDir is not None:
+            if self.getDefaultSaveDir is not None:
                 if self.dirty is True:
                     self.saveFile()
             else:
@@ -1329,11 +1336,11 @@ class MainWindow(QMainWindow, WindowMixin):
             self.loadFile(filename)
 
     def saveFile(self, _value=False):
-        if self.defaultSaveDir is not None and len(ustr(self.defaultSaveDir)):
+        if self.getDefaultSaveDir is not None and len(ustr(self.getDefaultSaveDir)):
             if self.filePath:
                 imgFileName = os.path.basename(self.filePath)
                 savedFileName = os.path.splitext(imgFileName)[0]
-                savedPath = os.path.join(ustr(self.defaultSaveDir), savedFileName)
+                savedPath = os.path.join(ustr(self.getDefaultSaveDir), savedFileName)
                 self._saveFile(savedPath)
         else:
             imgFileDir = os.path.dirname(self.filePath)
