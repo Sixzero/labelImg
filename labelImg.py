@@ -482,6 +482,8 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.lastOpenDir and 0<len(self.lastOpenDir):
             self.importDirImages(self.lastOpenDir)
 
+        self.predictor=None
+
     def keyReleaseEvent(self, event):
         if event.key() == Qt.Key_Control:
             self.canvas.setDrawingShapeToSquare(False)
@@ -679,7 +681,7 @@ class MainWindow(QMainWindow, WindowMixin):
             if 'amount' in props:
                 amount = ' ' + props['amount']
                 shape.props['amount'] = props['amount']
-            item.setText(text + amount)
+            item.setText(text + (amount if amount != ' ' else ''))
             item.setBackground(generateColorByText(text))
             self.setDirty()
 
@@ -842,6 +844,22 @@ class MainWindow(QMainWindow, WindowMixin):
             print('res', res)
             for recognized in res:
                 self.addLabel(self.canvas.addBox(*recognized))
+        try:
+            from model.predictor_model import init_predict
+            from PIL import Image
+            import numpy as np
+            if self.predictor is None:
+                self.predictor = init_predict()
+            im = Image.open(self.filePath)
+            im = im.resize((112, 112))
+            im = np.array(im) / 255.
+            im = im[np.newaxis, ...]
+            res = self.predictor(im)[0]
+            print('res:', res)
+            self.addLabel(self.canvas.addBox((0, 0, ), (112, 112), name=res[1]))
+            self.setDirty()
+        except Exception as e:
+            print('Error', e)
         # fix copy and delete
         self.shapeSelectionChanged(True)
 
@@ -1239,8 +1257,7 @@ class MainWindow(QMainWindow, WindowMixin):
     def importDirImages(self, dirpath):
         if not self.mayContinue() or not dirpath:
             return
-
-        self.localDir = os.path.split(dirpath)[-1]
+        # self.localDir = os.path.split(dirpath)[-1]
 
         self.lastOpenDir = dirpath
         self.dirname = dirpath
@@ -1525,6 +1542,7 @@ def get_main_app(argv=[], **kwargs):
     app.setWindowIcon(newIcon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     # Usage : labelImg.py image predefClassFile saveDir
+    print('argv', argv)
     win = MainWindow(argv[1] if len(argv) >= 2 else None,
                      argv[2] if len(argv) >= 3 else os.path.join(
                          os.path.dirname(sys.argv[0]),

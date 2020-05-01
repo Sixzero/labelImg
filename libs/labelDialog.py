@@ -36,7 +36,6 @@ class CustomQCompleter(QCompleter):
         proxy_model.setSourceModel(self.source_model)
 
         super(CustomQCompleter, self).setModel(proxy_model)
-        print('match :', proxy_model.rowCount())
 
 
     def splitPath(self, path):
@@ -98,7 +97,7 @@ class LabelDialog(QDialog):
     def postProcess(self):
         try:
             self.edit.setText(self.edit.text().trimmed())
-        except AttributeError:
+        except AttributeError as e:
             # PyQt5: AttributeError: 'str' object has no attribute 'trimmed'
             self.edit.setText(self.edit.text())
 
