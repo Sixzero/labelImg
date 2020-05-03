@@ -222,6 +222,9 @@ class MainWindow(QMainWindow, WindowMixin):
         auto_annotate = action("Auto annotate", self.autoAnnotatePicture,
                         'm', 'verify', getStr('verifyImgDetail'))
 
+        delete_picture = action("Delete picture", self.deletePicture,
+                        'x', 'edit-delete', getStr('verifyImgDetail'))
+
         save = action(getStr('save'), self.saveFile,
                       'Ctrl+S', 'save', getStr('saveDetail'), enabled=False)
 
@@ -393,7 +396,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.tools = self.toolbar('Tools')
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, auto_annotate, save, save_format, None, create, copy, delete, None,
+            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, auto_annotate, save, save_format, None, create, copy, delete, delete_picture, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
@@ -855,13 +858,38 @@ class MainWindow(QMainWindow, WindowMixin):
             im = np.array(im) / 255.
             im = im[np.newaxis, ...]
             res = self.predictor(im)[0]
-            print('res:', res)
             self.addLabel(self.canvas.addBox((0, 0, ), (112, 112), name=res[1]))
             self.setDirty()
         except Exception as e:
             print('Error', e)
         # fix copy and delete
         self.shapeSelectionChanged(True)
+
+    def deletePicture(self):
+        msgBox = QMessageBox()
+        msgBox.setIcon(QMessageBox.Information)
+        msgBox.setText("Confirm deletion.")
+        msgBox.setWindowTitle("Delete")
+        msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        return_value = msgBox.exec()
+        if return_value == QMessageBox.Ok:
+            print('OK clicked')
+
+            os.remove(self.filePath)
+
+            filename = None
+            print('Removed file:', self.filePath)
+            currIndex = self.mImgList.index(self.filePath)
+            self.fileListWidget.takeItem(currIndex)
+            if currIndex + 1 < len(self.mImgList):
+                filename = self.mImgList[currIndex + 1]
+            self.mImgList.remove(self.filePath)
+            self.filePath = filename
+
+            if filename:
+                self.loadFile(filename)
+
 
     def labelSelectionChanged(self):
         item = self.currentItem()
